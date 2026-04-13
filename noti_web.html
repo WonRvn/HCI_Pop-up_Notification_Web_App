@@ -2,145 +2,157 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HCI 알림 대응 행동 실험 - 실제 공룡게임 버전</title>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no"
+  />
+  <meta name="theme-color" content="#121826" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>알림 반응 실험 앱</title>
+  <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="app">
-    <aside class="sidebar">
-      <div>
-        <h1>공룡게임 기반<br>HCI 알림 실험 앱</h1>
-        <p>참가자가 실제로 게임을 플레이하는 동안 상단 알림을 제시하고, 시급성에 따른 알림 대응 행동과 반응시간을 기록하는 웹 앱입니다.</p>
+  <div class="mobile-app">
+    <header class="app-header">
+      <div class="header-left">
+        <h1>알림 반응 실험</h1>
+        <p>2048 수행 중 알림 행동 측정</p>
       </div>
-
-      <div class="panel">
-        <h2>실험 제어</h2>
-        <div class="control-group">
-          <div>
-            <label for="participantId">참가자 ID</label>
-            <input id="participantId" type="text" placeholder="예: P01" />
-          </div>
-          <div>
-            <label for="urgencySelect">수동 알림 시급성</label>
-            <select id="urgencySelect">
-              <option value="low">낮음</option>
-              <option value="medium">보통</option>
-              <option value="high">높음</option>
-            </select>
-          </div>
-          <div>
-            <label for="taskSelect">알림 내용 유형</label>
-            <select id="taskSelect">
-              <option value="과제 마감이 오늘 23:59입니다.">과제 마감</option>
-              <option value="팀플 회의가 10분 뒤 시작됩니다.">팀플 회의</option>
-              <option value="내일 시험 범위를 아직 확인하지 않았습니다.">시험 일정</option>
-              <option value="친구와의 약속 장소가 변경되었습니다.">약속 변경</option>
-            </select>
-          </div>
-          <button class="btn-primary" id="showManualBtn">수동 알림 띄우기</button>
-          <button class="btn-secondary" id="startAutoBtn">자동 실험 시작</button>
-          <button class="btn-secondary" id="restartGameBtn">게임 재시작</button>
-          <button class="btn-danger" id="resetBtn">기록 초기화</button>
+      <div class="header-right">
+        <div class="mini-card">
+          <span>점수</span>
+          <strong id="score">0</strong>
+        </div>
+        <div class="mini-card">
+          <span>최고</span>
+          <strong id="bestScore">0</strong>
         </div>
       </div>
+    </header>
 
-      <div class="panel">
-        <h2>실험 포인트</h2>
-        <p>• 독립변수: 알림 시급성(낮음/보통/높음)</p>
-        <p>• 종속변수: 즉시 처리 / 나중에 보기 / 무시 / 반응시간</p>
-        <p>• 집중 과제: 장애물 회피 공룡게임</p>
-        <p>• 실제 플레이 중 상단 알림이 간섭하도록 설계</p>
+    <section class="status-panel">
+      <div class="status-chip">
+        <span>상태</span>
+        <strong id="experimentStatus">대기 중</strong>
       </div>
-
-      <div class="panel">
-        <h2>CSV 내보내기</h2>
-        <button class="btn-secondary" id="downloadBtn">CSV 다운로드</button>
-        <p style="margin-top:10px;">수집 항목: 참가자 ID, 시급성, 알림 내용, 사용자 선택, 반응시간(ms), 발생 시각</p>
+      <div class="status-chip">
+        <span>남은 시간</span>
+        <strong id="remainingTime">-</strong>
       </div>
-    </aside>
-
-    <main class="main">
-      <div class="topbar">
-        <div class="badge-row">
-          <div class="badge">스페이스바 / ↑ : 점프</div>
-          <div class="badge">게임오버 후 재시작 가능</div>
-          <div class="badge">실험 반응 기록 자동 저장</div>
-        </div>
+      <div class="status-chip">
+        <span>현재 조건</span>
+        <strong id="currentCondition">-</strong>
       </div>
+      <div class="status-chip">
+        <span>진행률</span>
+        <strong id="progressText">0 / 0</strong>
+      </div>
+    </section>
 
-      <section class="experiment-stage">
-        <div class="notification-bar" id="notificationBar">
-          <div class="notification-content">
-            <h3 id="notificationTitle">알림</h3>
-            <p id="notificationText">새로운 일정이 도착했습니다.</p>
-          </div>
-          <div class="notification-actions">
-            <button class="action-btn action-now" data-response="즉시 처리">즉시 처리</button>
-            <button class="action-btn action-later" data-response="나중에 보기">나중에 보기</button>
-            <button class="action-btn action-ignore" data-response="무시">무시</button>
+    <main class="app-main">
+      <section class="notification-section">
+        <div id="notificationContainer" class="notification-container">
+          <div class="notification-placeholder">
+            실험 시작 후 알림이 여기에 표시됩니다.
           </div>
         </div>
+      </section>
 
-        <div class="game-shell">
-          <div class="game-header">
-            <span>공룡게임 실험 화면</span>
-            <span>점수: <strong id="score">0</strong> | 최고점수: <strong id="bestScore">0</strong></span>
-          </div>
+      <section class="game-section">
+        <div class="game-top">
+          <h2>2048</h2>
+          <p>스와이프로 조작</p>
+        </div>
 
-          <div class="game-area" id="gameArea">
-            <div class="sun"></div>
-            <div class="cloud cloud1"></div>
-            <div class="cloud cloud2"></div>
-            <div class="cloud cloud3"></div>
-            <div class="hint">게임에 집중하는 동안 상단 알림이 나타납니다.<br>알림 대응과 게임 수행의 관계를 관찰할 수 있습니다.</div>
+        <div class="game-wrapper">
+          <div id="gameBoard" class="board"></div>
 
-            <div class="dino running" id="dino">
-              <div class="dino-body"></div>
-              <div class="dino-head"><div class="dino-eye"></div></div>
-              <div class="dino-arm"></div>
-              <div class="leg left"></div>
-              <div class="leg right"></div>
-            </div>
-
-            <div class="ground"></div>
-
-            <div class="game-overlay" id="gameOverlay">
-              <div class="overlay-card">
-                <h2>공룡게임 실험</h2>
-                <p>스페이스바 또는 ↑ 키로 점프해서 장애물을 피하세요.</p>
-                <p>플레이 중 상단 알림이 뜨면 <strong>즉시 처리 / 나중에 보기 / 무시</strong> 중 하나를 선택하세요.</p>
-                <button id="startGameBtn">게임 시작</button>
-              </div>
+          <div id="gameOver" class="game-over hidden">
+            <div class="game-over-card">
+              <h3>게임 종료</h3>
+              <button id="restartBtn" class="primary-btn">다시 시작</button>
             </div>
           </div>
         </div>
       </section>
 
-      <div class="summary">
-        <div class="summary-card"><strong>총 알림 수</strong><span id="totalCount">0</span></div>
-        <div class="summary-card"><strong>평균 반응시간(ms)</strong><span id="avgTime">0</span></div>
-        <div class="summary-card"><strong>즉시 처리</strong><span id="nowCount">0</span></div>
-        <div class="summary-card"><strong>나중에 보기+무시</strong><span id="laterIgnoreCount">0</span></div>
-      </div>
+      <section class="config-section">
+        <div class="section-title">
+          <h2>실험 설정</h2>
+        </div>
 
-      <div class="results">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>참가자</th>
-              <th>시급성</th>
-              <th>내용</th>
-              <th>반응</th>
-              <th>반응시간(ms)</th>
-              <th>시각</th>
-            </tr>
-          </thead>
-          <tbody id="logTableBody"></tbody>
-        </table>
-      </div>
+        <div class="config-grid">
+          <label>
+            참가자 ID
+            <input type="text" id="participantId" placeholder="예: P01" />
+          </label>
+
+          <label>
+            실험 시간(분)
+            <input type="number" id="experimentMinutes" min="1" value="5" />
+          </label>
+
+          <label>
+            최소 간격(초)
+            <input type="number" id="minInterval" min="3" value="5" />
+          </label>
+
+          <label>
+            최대 간격(초)
+            <input type="number" id="maxInterval" min="5" value="15" />
+          </label>
+
+          <label>
+            알림 표시 시간(초)
+            <input type="number" id="notificationDuration" min="2" value="6" />
+          </label>
+
+          <label>
+            반복 수
+            <input type="number" id="repeatPerCondition" min="1" value="3" />
+          </label>
+        </div>
+      </section>
+
+      <section class="log-section">
+        <div class="section-title">
+          <h2>최근 로그</h2>
+        </div>
+        <div id="logPreview" class="log-preview"></div>
+      </section>
     </main>
+
+    <nav class="bottom-bar">
+      <button id="startExperimentBtn" class="primary-btn">실험 시작</button>
+      <button id="resetGameBtn" class="secondary-btn">게임 리셋</button>
+      <button id="downloadCsvBtn" class="secondary-btn">CSV 저장</button>
+    </nav>
+  </div>
+
+  <div id="surveyModal" class="modal hidden">
+    <div class="modal-sheet">
+      <h2>실험 후 설문</h2>
+
+      <label class="survey-label">
+        만족도 (1~5)
+        <select id="satisfactionScore">
+          <option value="1">1 - 매우 불만족</option>
+          <option value="2">2 - 불만족</option>
+          <option value="3" selected>3 - 보통</option>
+          <option value="4">4 - 만족</option>
+          <option value="5">5 - 매우 만족</option>
+        </select>
+      </label>
+
+      <label class="survey-label">
+        이유
+        <textarea id="satisfactionReason" rows="4" placeholder="이유를 입력하세요"></textarea>
+      </label>
+
+      <button id="submitSurveyBtn" class="primary-btn full-btn">설문 제출</button>
+    </div>
   </div>
 
   <script src="script.js"></script>
